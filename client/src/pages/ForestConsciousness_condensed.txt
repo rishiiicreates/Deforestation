@@ -1,0 +1,86 @@
+// ForestConsciousness.tsx (condensed for GitHub)
+// This file contains the immersive, living forest interface
+// The full implementation includes a particle system that reacts to user movement,
+// a neural-like network of branches, and content that reveals organically as users explore.
+
+// Component imports
+import { useEffect, useRef, useState } from "react";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { gsap } from "gsap";
+import { DeforestationStat, SolutionAction } from "@shared/schema";
+
+const ForestConsciousness = () => {
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+// [...more imports...]
+
+// Main component definition
+const ForestConsciousness = () => {
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const treeNetworkRef = useRef<HTMLDivElement>(null);
+  const contentLayerRef = useRef<HTMLDivElement>(null);
+  
+  // State
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [branchesGrown, setBranchesGrown] = useState<string[]>([]);
+  const [userPosition, setUserPosition] = useState({ x: 0, y: 0 });
+  const [contentOpacity, setContentOpacity] = useState(0);
+  const [guidanceVisible, setGuidanceVisible] = useState(true);
+  const [growthLevel, setGrowthLevel] = useState(0);
+  const [revealedContent, setRevealedContent] = useState<string[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  
+  // Animations
+  const treeAnimations = useAnimation();
+  const contentAnimations = useAnimation();
+  
+  // Data fetching
+  const { data: deforestationStats } = useQuery<DeforestationStat[]>({
+    queryKey: ['/api/deforestation-stats'],
+  });
+  
+// [...state management and refs...]
+
+// Forest nodes (navigation structure)
+  const forestNodes = [
+    { id: "consciousness", title: "Forest Consciousness", position: { x: 50, y: 50 }, connects: ["statistics", "stories"] },
+    { id: "statistics", title: "Living Numbers", position: { x: 30, y: 30 }, connects: ["consequences"] },
+    { id: "stories", title: "Forest Voices", position: { x: 70, y: 30 }, connects: ["solutions"] },
+    { id: "consequences", title: "Broken Harmony", position: { x: 20, y: 70 }, connects: ["solutions"] },
+    { id: "solutions", title: "Healing Actions", position: { x: 75, y: 70 }, connects: [] }
+  ];
+  
+  // Initialize canvas and lifecycle
+
+// Particle system implementation
+    class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+  // [...particle implementation...]
+
+// Growth and interaction methods
+  const growBranch = (nodeId: string) => {
+    if (branchesGrown.includes(nodeId)) return;
+    
+    // Mark branch as grown
+    setBranchesGrown(prev => [...prev, nodeId]);
+    setActiveNode(nodeId);
+    
+    // Reveal content for this node
+    if (!revealedContent.includes(nodeId)) {
+      setRevealedContent(prev => [...prev, nodeId]);
+    }
+  // [...growth implementation...]
+
+// Rendering
+196:    return () => {
+  // [...rendering JSX with animated UI elements...]
+
+export default ForestConsciousness;
