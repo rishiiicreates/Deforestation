@@ -1,0 +1,150 @@
+import { useEffect, useRef, useState } from "react";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { gsap } from "gsap";
+import { DeforestationStat, SolutionAction } from "@shared/schema";
+
+const ForestConsciousness = () => {
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const treeNetworkRef = useRef<HTMLDivElement>(null);
+  const contentLayerRef = useRef<HTMLDivElement>(null);
+  
+  // State
+  const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [branchesGrown, setBranchesGrown] = useState<string[]>([]);
+  const [userPosition, setUserPosition] = useState({ x: 0, y: 0 });
+  const [contentOpacity, setContentOpacity] = useState(0);
+  const [guidanceVisible, setGuidanceVisible] = useState(true);
+  const [growthLevel, setGrowthLevel] = useState(0);
+  const [revealedContent, setRevealedContent] = useState<string[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  
+  // Animations
+  const treeAnimations = useAnimation();
+  const contentAnimations = useAnimation();
+  
+  // Data fetching
+  const { data: deforestationStats } = useQuery<DeforestationStat[]>({
+    queryKey: ['/api/deforestation-stats'],
+  });
+  
+  const { data: solutions } = useQuery<SolutionAction[]>({
+    queryKey: ['/api/solutions'],
+  });
+
+  // Forest nodes structure (totally different from traditional navigation)
+  const forestNodes = [
+    { id: "consciousness", title: "Forest Consciousness", position: { x: 50, y: 50 }, connects: ["statistics", "stories"] },
+    { id: "statistics", title: "Living Numbers", position: { x: 30, y: 30 }, connects: ["consequences"] },
+    { id: "stories", title: "Forest Voices", position: { x: 70, y: 30 }, connects: ["solutions"] },
+    { id: "consequences", title: "Broken Harmony", position: { x: 20, y: 70 }, connects: ["solutions"] },
+    { id: "solutions", title: "Healing Actions", position: { x: 75, y: 70 }, connects: [] }
+  ];
+  
+  // Initialize canvas and lifecycle
+  useEffect(() => {
+    if (!canvasRef.current || !containerRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+    
+    // Set canvas to full screen
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
+    
+    // Forest living particles
+    const particles: Particle[] = [];
+    
+    class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      color: string;
+      life: number;
+      
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 5 + 1;
+        this.speedX = (Math.random() - 0.5) * 0.5;
+        this.speedY = (Math.random() - 0.5) * 0.5;
+        this.color = `rgba(76, 175, 80, ${Math.random() * 0.5 + 0.2})`;
+        this.life = Math.random() * 100 + 50;
+      }
+      
+      update(mouseX: number, mouseY: number) {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        
+        // React to user mouse position - particles are attracted to it
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 150) {
+          this.speedX += dx * 0.001;
+          this.speedY += dy * 0.001;
+        }
+        
+        // Edge behavior - wrap around
+        if (this.x < 0) this.x = canvas.width;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.y < 0) this.y = canvas.height;
+        if (this.y > canvas.height) this.y = 0;
+        
+        this.life--;
+        
+        if (this.life <= 0) {
+          this.reset();
+        }
+      }
+      
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.life = Math.random() * 100 + 50;
+      }
+      
+      draw(ctx: CanvasRenderingContext2D) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Create initial particles
+    for (let i = 0; i < 150; i++) {
+      particles.push(new Particle());
+    }
+    
+    // Animation function
+    let animationId: number | null = null;
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+    
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw neural-like connections between particles that are close
+      ctx.strokeStyle = 'rgba(76, 175, 80, 0.1)';
+      ctx.lineWidth = 0.5;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
