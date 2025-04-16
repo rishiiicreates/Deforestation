@@ -1,0 +1,150 @@
+          
+          if (distance < 100) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      
+      // Update and draw particles
+      particles.forEach(particle => {
+        particle.update(mouseX, mouseY);
+        particle.draw(ctx);
+      });
+      
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    // Track mouse movement
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      setUserPosition({ x: e.clientX, y: e.clientY });
+    };
+    
+    // Touch support
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
+        setUserPosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      }
+    };
+    
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    
+    // Start animation
+    animate();
+    
+    // Auto-grow initial node after few seconds
+    setTimeout(() => {
+      growBranch("consciousness");
+    }, 2000);
+    
+    return () => {
+      window.removeEventListener('resize', setCanvasSize);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('touchmove', handleTouchMove);
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, []);
+  
+  // Grow branch effect
+  const growBranch = (nodeId: string) => {
+    if (branchesGrown.includes(nodeId)) return;
+    
+    // Mark branch as grown
+    setBranchesGrown(prev => [...prev, nodeId]);
+    setActiveNode(nodeId);
+    
+    // Reveal content for this node
+    if (!revealedContent.includes(nodeId)) {
+      setRevealedContent(prev => [...prev, nodeId]);
+    }
+    
+    // Increase growth level
+    setGrowthLevel(prev => prev + 1);
+    
+    // Play growth sound if audio enabled
+    if (audioEnabled) {
+      const growthSound = new Audio('/growth-sound.mp3');
+      growthSound.volume = 0.2;
+      growthSound.play().catch(e => console.log("Audio play failed:", e));
+    }
+    
+    // Hide guidance after first growth
+    if (guidanceVisible) {
+      setGuidanceVisible(false);
+    }
+  };
+  
+  // Handle node interaction
+  const handleNodeInteraction = (nodeId: string) => {
+    growBranch(nodeId);
+    
+    // Animate content layer
+    contentAnimations.start({
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.8, ease: "easeOut" }
+    });
+    
+    // Find node connections and grow them after a delay
+    const node = forestNodes.find(n => n.id === nodeId);
+    if (node && node.connects.length > 0) {
+      node.connects.forEach((connectedId, index) => {
+        setTimeout(() => {
+          growBranch(connectedId);
+        }, 1500 * (index + 1));
+      });
+    }
+  };
+  
+  // Toggle audio
+  const toggleAudio = () => {
+    setAudioEnabled(!audioEnabled);
+  };
+  
+  // Custom styling for a natural look based on growth level
+  const getNodeStyle = (nodeId: string) => {
+    const isGrown = branchesGrown.includes(nodeId);
+    const isActive = activeNode === nodeId;
+    
+    return {
+      opacity: isGrown ? 1 : 0.2,
+      scale: isActive ? 1.2 : 1,
+      backgroundColor: isActive ? "rgba(139, 195, 74, 0.9)" : "rgba(76, 175, 80, 0.7)",
+      boxShadow: isActive 
+        ? "0 0 20px rgba(139, 195, 74, 0.8)" 
+        : isGrown 
+          ? "0 0 10px rgba(76, 175, 80, 0.5)" 
+          : "none"
+    };
+  };
+  
+  // Get content for the active node
+  const getNodeContent = (nodeId: string | null) => {
+    if (!nodeId) return null;
+    
+    switch(nodeId) {
+      case "consciousness":
+        return (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-lg mx-auto text-center"
+          >
+            <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 text-forest-light">
+              The Forest is <span className="font-accent">Alive</span>
+            </h1>
+            <p className="text-lg md:text-xl mb-8">
+              You have entered the forest consciousness. Here, you don't just view information - 
+              you become part of a living system where your actions affect how knowledge is revealed.
+            </p>
+            <p className="text-md italic text-forest-accent">
+              Move your cursor to awaken the forest particles. Click on glowing nodes to grow the network.
+            </p>
